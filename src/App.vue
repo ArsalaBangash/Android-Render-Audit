@@ -66,7 +66,7 @@ export default {
 </script>
 
 <style>
-* {
+body {
   background-color: white;
 }
 :root {
@@ -81,7 +81,7 @@ export default {
 }
 
 .misc-time-stage {
-  background-color: var(--vsync-delay-color);
+  background-color: var(--misc-time-color);
 }
 
 .input-stage {

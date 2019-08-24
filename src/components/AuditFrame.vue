@@ -4,10 +4,10 @@
     <div class="body-1">Start time: {{timestamp}}ms</div>
     <div class="body-1 mb-8">Duration: {{duration}}ms</div>
 
-    <div class="body-2" v-show="errorStageCount">We identified issues with your app</div>
+    <div class="body-2" v-show="errorStageCount > 0">This frame has warnings</div>
 
     <div class="d-flex mt-4 render-pipeline-container">
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column pipeline-thread-container">
         <div class="subtitle">Main Thread</div>
         <v-btn small text class="inspect-button" color="primary">
           <v-icon left>search</v-icon>Inspect
@@ -23,12 +23,15 @@
               :stageName="getNameForStage(stage)"
               :duration="frame.renderStageDurations[stage]"
               :status="getStageStatus(stage)"
+              :hasWarning="!durationWithinStandardDeviation(stage)"
+              :hasError="!durationWithinThreshold(stage)"
+              :isGood="getStageStatus(stage) == 0"
             />
           </div>
         </div>
       </div>
 
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column pipeline-thread-container">
         <div class="subtitle">Render Thread</div>
         <v-btn small text class="inspect-button" color="success">
           <v-icon left>search</v-icon>Inspect
@@ -44,6 +47,9 @@
               :stageName="getNameForStage(stage)"
               :duration="frame.renderStageDurations[stage]"
               :status="getStageStatus(stage)"
+              :hasWarning="!durationWithinStandardDeviation(stage)"
+              :hasError="!durationWithinThreshold(stage)"
+              :isGood="getStageStatus(stage) == 0"
             />
           </div>
         </div>
@@ -62,7 +68,7 @@ export const StageStatus = {
 };
 
 export const StageThresholds = {
-  VSYNC_DELAY: 2000,
+  VSYNC_DELAY: 4000,
   INPUT: 8000,
   ANIMATION: 8000,
   MEASURE_LAYOUT: 8000,
@@ -141,16 +147,13 @@ export default {
       return StageStatus.ERROR;
     },
     durationWithinStandardDeviation(stage) {
+      console.log('here')
       return (
         this.frame.renderStageDurations[stage] <
-        this.stats[stage].mean + this.stats[stage].standardDeviation
+        (this.stats[stage].meanDurationUs + this.stats[stage].sdDurationUs)
       );
     },
     durationWithinThreshold(stage) {
-      if (stage === "ANIMATION") {
-        console.log(this.frame.renderStageDurations[stage])
-        console.log(StageThresholds[stage])
-      }
       return this.frame.renderStageDurations[stage] < StageThresholds[stage];
     },
     getIconForStage(stage) {
@@ -198,6 +201,10 @@ export default {
 </script>
 
 <style >
+
+.pipeline-thread-container {
+  min-width: 236px;
+}
 .stage-bar {
   height: 12px;
   border-radius: 2px;
@@ -233,7 +240,7 @@ export default {
   width: 100px;
 }
 .render-pipeline-container {
-  width: 500px;
+  width: 575px;
   justify-content: space-between;
 }
 .v-expansion-panel-header__icon {
